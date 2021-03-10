@@ -1,3 +1,6 @@
+const Post = require('../posts/posts-model');
+const User = require('../users/users-model');
+
 function logger(req, res, next) {
   console.log(
     `[${new Date().toISOString()}] ${req.method} to ${req.url} from ${req.get(
@@ -7,8 +10,21 @@ function logger(req, res, next) {
   next();
 }
 
-function validateUserId(req, res, next) {
-  // DO YOUR MAGIC
+async function validateUserId(req, res, next) {
+  const {id} = req.params
+  try {
+    const user = await User.getById(id)
+    if(!user) {
+      res.status(404).json({
+        message: 'User Not Found'
+      })
+    } else {
+      req.user = user
+      next()
+    }
+  } catch(err) {
+    res.status(500).json(`Server error: ${err}`)
+  }
 }
 
 function validateUser(req, res, next) {
@@ -20,6 +36,7 @@ function validatePost(req, res, next) {
 }
 
 module.exports = {
-  logger
-}
+  logger,
+  validateUserId
+};
 
