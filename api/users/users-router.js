@@ -2,40 +2,46 @@ const express = require('express');
 
 const User = require('./users-model');
 const Post = require('../posts/posts-model');
-const MW = require('../middleware/middleware');
+const { validateUser, validateUserId } = require('../middleware/middleware')
+
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  User.get()
+router.get('/', (req, res, next) => {
+  User.get(req.query)
     .then((users) => {
       res.status(200).json(users);
     })
-    .catch((err) => {
-      res.status(500).json({
-        message: 'Server Cannot Retrieve Users',
-      });
-    });
+    .catch(next)
 });
 
-router.get('/:id', MW.validateUserId, (req, res) => {
+router.get('/:id', validateUserId, (req, res) => {
   res.status(200).json(req.user);
 });
 
-router.post('/', (req, res) => {
-  // RETURN THE NEWLY CREATED USER OBJECT
-  // this needs a middleware to check that the request body is valid
+router.post('/', validateUser, (req, res, next) => {
+  User.insert(req.body)
+    .then((user) => {
+      res.status(201).json(user);
+    })
+    .catch(next);
 });
 
-router.put('/:id', (req, res) => {
-  // RETURN THE FRESHLY UPDATED USER OBJECT
-  // this needs a middleware to verify user id
-  // and another middleware to check that the request body is valid
+router.put('/:id', validateUser, validateUserId, (req, res, next) => {
+  User.update(req.params.id, req.body)
+    .then((post) => {
+      res.status(200).json(post);
+    })
+    .catch(next);
 });
 
-router.delete('/:id', (req, res) => {
-  // RETURN THE FRESHLY DELETED USER OBJECT
-  // this needs a middleware to verify user id
+router.delete('/:id', validateUserId, (req, res, next) => {
+  User.remove(req.params.id)
+  .then(() => {
+    res.status(200).json({
+      message: 'The user has been removed'
+    })
+  })
 });
 
 router.get('/:id/posts', (req, res) => {
